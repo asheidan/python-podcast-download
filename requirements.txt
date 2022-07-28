@@ -1,4 +1,4 @@
 aiohttp
 aiofiles
-progressbar2
+tqdm
 
