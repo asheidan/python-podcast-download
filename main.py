@@ -12,7 +12,6 @@ from typing import Optional
 import aiohttp
 import aiofiles
 import aiofiles.os
-#import progressbar
 from tqdm.asyncio import tqdm
 
 
@@ -23,7 +22,11 @@ NAMESPACES = {
 }
 
 RSS_URLS = [
+    "https://access.acast.com/rss/5e989875bc46c6e33316eb77/",
     "http://feeds.feedburner.com/dancarlin/history?format=xml",
+    "https://feeds.acast.com/public/shows/haveristerna",
+    "https://www.patreon.com/rss/haveristerna?auth=2PvorYOmx6wYDgTYUqlHCBSkOtF3iI2U",
+    "https://rss.acast.com/dragonfriends",
 ]
 
 TIMEZONES = {
@@ -55,6 +58,7 @@ def datetime_in_utc(timestamp: datetime) -> datetime:
 
 
 def md5sum(input: str) -> str:
+    """Return md5sum of input."""
     return hashlib.md5(input.encode()).hexdigest()
 
 
@@ -77,26 +81,19 @@ async def download(session: aiohttp.ClientSession, url: str, target: str,
     # Issue regarding timeout https://github.com/aio-libs/aiohttp/issues/2249
     # Writing to an async file https://www.twilio.com/blog/working-with-files-asynchronously-in-python-using-aiofiles-and-asyncio
 
-    #target_size = target_size or progressbar.UnknownLength
     downloaded_bytes = 0
 
     # TODO: Use suitable timeout
-    #with progressbar.ProgressBar(max_value=target_size) as bar:
-        #bar.start()
     try:
         async with session.get(url, timeout=None, read_bufsize=BUF_SIZE) as response:
             with tqdm(total=target_size, unit="b", unit_scale=True, desc=url) as bar:
 
-                # TODO: Maybe use NamedTemporaryFile to be able to move it to target location
-                # or use .progress-file and move to location when complete
-                #async with aiofiles.tempfile.TemporaryFile('wb') as output_file:
                 async with aiofiles.open(target + progress_suffix, "wb") as output_file:
                     async for chunk in response.content.iter_chunked(BUF_SIZE):
 
                         await output_file.write(chunk)
 
                         downloaded_bytes += len(chunk)
-
                         bar.update(len(chunk))
 
                 await aiofiles.os.rename(target + progress_suffix, target)
